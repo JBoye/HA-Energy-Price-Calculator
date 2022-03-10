@@ -2,6 +2,7 @@ nordpool_calculator:
   template:
     - sensor:
         - name: "Price Calculator"
+          unique_id: 75a51b09
           attributes:
             start_times: >
               {# Configuration #}
@@ -13,24 +14,29 @@ nordpool_calculator:
               {% set consumption = 230 * 16 / 1000 %}
 
               {# Duration of charging, washing, etc.  #}
-              {% set duration = timedelta(hours = 10 / consumption, minutes = 0) %} 
+              {% set duration = timedelta(hours = 2, minutes = 30) %} 
 
               {# First possible time to start. Default now() #}
-              {% set start_time = today_at("00:00") + timedelta(hours = 0) %} 
+              {% set start_time = now() %}       
 
               {# Deadline for when the operation should be finished (For example departure time). 
               Default tomorrow at 23:59:59 if tomorrows prices are available, otherwise today at 23:59:59 #}
-              {% set end_time = today_at("00:00") + timedelta(hours = 12) %} 
+              {% set end_time = today_at("00:00") + timedelta(hours = 22) %} 
 
-              {# Helpers #}
+              {# Macros #}
               {%- macro date_to_index(date) -%}{{(date.hour + (date.date() - now().date()).days * 24)}}{%- endmacro -%}{# as datetime? #}
               {%- macro index_to_date(index) -%}{{today_at("00:00") + timedelta(hours = index)}}{%- endmacro -%}{# as int? #}
-              {% set start_hour = date_to_index(start_time) | int %}
-              {% set end_hour = 1 + date_to_index(end_time - duration) | int %}
+
+              {# All available prices from Nordpool #}
               {% set prices_raw = state_attr(sensor_name, "raw_today") + state_attr(sensor_name, "raw_tomorrow") %}
 
               {# End time can not be later than the available price data #}
               {% set end_time = [end_time, (prices_raw | last).end] | min %}
+
+              {% set start_hour = date_to_index(start_time) | int %}
+              {% set end_hour = 2 + date_to_index(end_time - duration) | int %}
+
+              {# All prices within timerange #}
               {% set prices = prices_raw[start_hour:end_hour] %}
 
               {# namespace to hold values #}
@@ -51,26 +57,31 @@ nordpool_calculator:
                       {% set item.value = item.value + (prices_raw[index].value * hour_duration) %}
                     {% endif %}                    
                 {% endfor %}
-                {% set ns.start_times = ns.start_times + [{'start': item.start | string, 'end': item.end | string, 'value': item.value * consumption}] %}
-              {% endfor -%}
-              {{ns.start_times | tojson}}
+                {% set ns.start_times = ns.start_times + [{'start': item.start | string, 'end': item.end | string, 'value': (item.value * consumption) | round (2)}] %}
+              {% endfor -%}               
+              {# Sort items by value or start #}
+              {{ns.start_times | sort(attribute='start') | tojson}}
 
           state: >
             Calculating...
 
         - name: "Price Calculator Price now"
+          unique_id: 3d357de0
           state: >
             {{ state_attr("sensor.price_calculator", "start_times")[0].value | round (2)}}
 
         - name: "Price Calculator Cheapest Time"
+          unique_id: fa95a6f8
           state: >
             {{ (state_attr("sensor.price_calculator", "start_times") | sort(attribute='value'))[0].start }}
 
         - name: "Price Calculator Cheapest Price"
+          unique_id: e725fdd4
           state: >
             {{ (state_attr("sensor.price_calculator", "start_times") | sort(attribute='value'))[0].value | round (2)}}
 
     - binary_sensor:
         - name: "Price Calculator Is cheapest"
+          unique_id: 26d33c17
           state: >
             {{ (state_attr("sensor.price_calculator", "start_times") | sort(attribute='value'))[0] == state_attr("sensor.price_calculator", "start_times")}}
