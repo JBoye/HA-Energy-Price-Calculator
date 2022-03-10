@@ -1,4 +1,24 @@
 nordpool_calculator:
+  input_datetime:
+    calculator_end_time:
+      name: Slut tid
+      has_date: false
+      has_time: true
+
+    calculator_duration:
+      name: Varighed
+      has_date: false
+      has_time: true
+
+  input_number:
+    calculator_kilowatt:
+      name: Consumption kW
+      icon: mdi:clock-start
+      min: 0
+      max: 30
+      step: 0.01
+      mode: box
+
   template:
     - sensor:
         - name: "Price Calculator"
@@ -11,17 +31,18 @@ nordpool_calculator:
               {% set sensor_name = "sensor.elpris" %}
 
               {# Consumption in kW #}
-              {% set consumption = 230 * 16 / 1000 %}
+              {% set consumption = states("input_number.calculator_kilowatt") | float %}
 
               {# Duration of charging, washing, etc.  #}
-              {% set duration = timedelta(hours = 2, minutes = 30) %} 
+              {% set input_duration = today_at(states("input_datetime.calculator_duration")) %}
+              {% set duration = timedelta(hours = input_duration.hour, minutes = input_duration.minute) %} 
 
               {# First possible time to start. Default now() #}
               {% set start_time = now() %}       
 
               {# Deadline for when the operation should be finished (For example departure time). 
               Default tomorrow at 23:59:59 if tomorrows prices are available, otherwise today at 23:59:59 #}
-              {% set end_time = today_at("00:00") + timedelta(hours = 22) %} 
+              {% set end_time = today_at(states("input_datetime.calculator_end_time")) + timedelta(days = 1 if today_at(states("input_datetime.calculator_end_time")) < now() else 0) %}
 
               {# Macros #}
               {%- macro date_to_index(date) -%}{{(date.hour + (date.date() - now().date()).days * 24)}}{%- endmacro -%}{# as datetime? #}
@@ -63,7 +84,7 @@ nordpool_calculator:
               {{ns.start_times | sort(attribute='start') | tojson}}
 
           state: >
-            Calculating...
+            Calculating...?
 
         - name: "Price Calculator Price now"
           unique_id: 3d357de0
@@ -74,6 +95,12 @@ nordpool_calculator:
           unique_id: fa95a6f8
           state: >
             {{ (state_attr("sensor.price_calculator", "start_times") | sort(attribute='value'))[0].start }}
+          attributes:
+            countdown: >
+              {% set value = states("sensor.price_calculator_cheapest_time") | as_datetime %}
+              {% if value > now() -%}
+              start om {{'%02d' % ((value - now()).total_seconds() / 60 / 60) | round(0, 'floor')}}:{{'%02d' % ((value - now()).total_seconds() / 60 % 60) | round(0, 'floor')}}
+              {%- else -%}start nu{%- endif %}
 
         - name: "Price Calculator Cheapest Price"
           unique_id: e725fdd4
