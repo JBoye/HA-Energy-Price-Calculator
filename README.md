@@ -36,7 +36,11 @@ Examples:
 
 Hybrid Electric car charging 10 kWh battery: (Assuming sensor.car_battery_level is the battery level %)
 ```
-{% set duration = timedelta(hours = timedelta(hours = 10 / consumption * states("sensor.car_battery_level") | float)) %}
+{% set duration = timedelta(hours = (10 / consumption) * (1 - (states("sensor.car_battery_level") | float / 100))) %}
+```
+Electric car charging 75 kWh battery up to 80%: (Assuming sensor.car_battery_level is the battery level %)
+```
+{% set duration = timedelta(hours = 0.8 * (75 / consumption) * (1 - (states("sensor.car_battery_level") | float / 100))) %}
 ```
 
 Washing machine running 2.5 hours
