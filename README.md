@@ -75,3 +75,40 @@ In 12 hours:
 ```
 {% set end_time = now() + timedelta(hours=12) %} 
 ```
+
+
+## Sample Card (in danish)
+```
+type: vertical-stack
+cards:
+  - type: entity
+    entity: sensor.price_calculator_cheapest_time
+    attribute: countdown
+    name: 'Start tid:'
+    icon: mdi:clock-digital
+  - type: entities
+    entities:
+      - entity: binary_sensor.price_calculator_is_cheapest
+        name: Billigst nu
+        icon: mdi:currency-usd
+      - entity: sensor.price_calculator_price_now
+        icon: mdi:cash-100
+        name: Pris nu
+      - entity: sensor.price_calculator_cheapest_price
+        name: Billigste pris
+        icon: mdi:cash-100
+      - entity: sensor.price_calculator_cheapest_time
+        name: Billigste tidspunkt
+        icon: mdi:clock
+  - type: entities
+    entities:
+      - entity: input_datetime.calculator_end_time
+      - entity: input_datetime.calculator_duration
+      - entity: input_number.calculator_kilowatt
+        name: Forbrug kW
+        icon: mdi:lightning-bolt
+    title: Indstilling
+
+```
+
+````
