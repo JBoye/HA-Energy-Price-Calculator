@@ -6,9 +6,11 @@
 
 The entity_id of your Nordpool Sensor. 
 Examples:
+
 ```
 {% set sensor_name = "sensor.elpris" %}
 ```
+
 ```
 {% set sensor_name = "sensor.nordpool_kwh_dk1_dkk_2_00_025" %}
 ```
@@ -38,6 +40,7 @@ Hybrid Electric car charging 10 kWh battery: (Assuming sensor.car_battery_level 
 ```
 {% set duration = timedelta(hours = (10 / consumption) * (1 - (states("sensor.car_battery_level") | float / 100))) %}
 ```
+
 Electric car charging 75 kWh battery up to 80%: (Assuming sensor.car_battery_level is the battery level %)
 ```
 {% set duration = timedelta(hours = 0.8 * (75 / consumption) * (1 - (states("sensor.car_battery_level") | float / 100))) %}
@@ -46,7 +49,6 @@ Electric car charging 75 kWh battery up to 80%: (Assuming sensor.car_battery_lev
 Washing machine running 2.5 hours
 ```
 {% set duration = timedelta(hours = 2, minutes = 30) %}
-
 ```
 
 ### start_time 
@@ -114,5 +116,3 @@ cards:
     title: Indstilling
 
 ```
-
-````
