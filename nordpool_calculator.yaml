@@ -27,8 +27,8 @@ nordpool_calculator:
             start_times: >
               {# Configuration #}
 
-              {# Name of Nordpool Sensor #}
-              {% set sensor_name = "sensor.elpris" %}
+              {# Name of Energi Price Sensor #}
+              {% set sensor_name = "sensor.energi_data_service" %}
 
               {# Consumption in kW #}
               {% set consumption = states("input_number.calculator_kilowatt") | float %}
@@ -48,11 +48,11 @@ nordpool_calculator:
               {%- macro date_to_index(date) -%}{{(date.hour + (date.date() - now().date()).days * 24)}}{%- endmacro -%}{# as datetime? #}
               {%- macro index_to_date(index) -%}{{today_at("00:00") + timedelta(hours = index)}}{%- endmacro -%}{# as int? #}
 
-              {# All available prices from Nordpool #}
-              {% set prices_raw = state_attr(sensor_name, "raw_today") + state_attr(sensor_name, "raw_tomorrow") %}
+              {# All available prices from price sensor #}
+              {% set prices_raw = state_attr(sensor_name, "raw_today") + state_attr(sensor_name, "raw_tomorrow") | selectattr('value', '!=', none) | list %}
 
               {# End time can not be later than the available price data #}
-              {% set end_time = [end_time, (prices_raw | last).end] | min %}
+              {% set end_time = [end_time, (prices_raw | last).hour + timedelta(hours=1)] | min %}
 
               {% set start_hour = date_to_index(start_time) | int %}
               {% set end_hour = 2 + date_to_index(end_time - duration) | int %}
@@ -63,7 +63,7 @@ nordpool_calculator:
               {# namespace to hold values #}
               {% set ns = namespace(start_times = []) %}
               {% for price in prices %}
-                {% set item = namespace(start = price.start, end = price.start + duration) %}
+                {% set item = namespace(start = price.hour, end = price.hour + duration) %}
                 {% if loop.first %}
                   {% set item.start = start_time %}
                   {% set item.end = start_time + duration %}
@@ -75,7 +75,7 @@ nordpool_calculator:
                 {% for index in range(date_to_index(item.start) | int, date_to_index(item.end) | int + 1) %}
                     {% set hour_duration = ([item.end, index_to_date(index + 1) | as_datetime] | min - [item.start, index_to_date(index) | as_datetime] | max).total_seconds() / 60 / 60 %}
                     {% if hour_duration > 0 %}
-                      {% set item.value = item.value + (prices_raw[index].value * hour_duration) %}
+                      {% set item.value = item.value + (prices_raw[index].price * hour_duration) %}
                     {% endif %}                    
                 {% endfor %}
                 {% set ns.start_times = ns.start_times + [{'start': item.start | string, 'end': item.end | string, 'value': (item.value * consumption) | round (2)}] %}
