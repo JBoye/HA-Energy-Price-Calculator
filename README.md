@@ -1,10 +1,10 @@
-# WIP HA-Nordpool-Calculator
+# Energy Price Calculator
 
 ## Configuration 
 
 ### sensor_name
 
-The entity_id of your Nordpool Sensor. 
+The entity_id of your [EnergiDataService](https://github.com/MTrab/energidataservice)  Sensor. 
 Examples:
 
 ```
@@ -12,7 +12,7 @@ Examples:
 ```
 
 ```
-{% set sensor_name = "sensor.nordpool_kwh_dk1_dkk_2_00_025" %}
+{% set sensor_name = "sensor.energi_data_service" %}
 ```
 
 ### consumption
