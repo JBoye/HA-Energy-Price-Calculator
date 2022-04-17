@@ -1,4 +1,4 @@
-nordpool_calculator:
+energy_calculator:
   input_datetime:
     calculator_end_time:
       name: Slut tid
