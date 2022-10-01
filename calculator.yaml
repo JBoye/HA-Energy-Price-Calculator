@@ -111,4 +111,4 @@ energy_calculator:
         - name: "Price Calculator Is cheapest"
           unique_id: 26d33c17
           state: >
-            {{ (state_attr("sensor.price_calculator", "start_times") | sort(attribute='value'))[0] == state_attr("sensor.price_calculator", "start_times")}}
+            {{ (state_attr("sensor.price_calculator", "start_times") | sort(attribute='value'))[0] == state_attr("sensor.price_calculator", "start_times")[0]}}
