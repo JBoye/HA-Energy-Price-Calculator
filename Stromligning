@@ -1,0 +1,57 @@
+{# Configuration #}
+
+{# Name of Energi Price Sensor #}
+{% set sensor_name = "sensor.stromligning_current_price_vat" %}
+
+{# Consumption in kW #}
+{% set consumption = 1500 / 1000 %}
+
+{# Duration of charging, washing, etc.  #}
+{% set duration = timedelta(hours = 2, minutes = 30) %}
+
+{# First possible time to start. Default now() #}
+{% set start_time = now() %}       
+
+{# Deadline for when the operation should be finished (For example departure time). 
+Default tomorrow at 23:59:59 if tomorrows prices are available, otherwise today at 23:59:59 #}
+{% set end_time = today_at("00:00") + timedelta(days=2) %} 
+
+{# Macros #}
+{%- macro date_to_index(date) -%}{{(date.hour + (date.date() - now().date()).days * 24)}}{%- endmacro -%}{# as datetime? #}
+{%- macro index_to_date(index) -%}{{today_at("00:00") + timedelta(hours = index)}}{%- endmacro -%}{# as int? #}
+
+{# All available prices from price sensor #}
+{% set prices_raw = state_attr(sensor_name, "prices") | list %}
+
+{# End time can not be later than the available price data #}
+{% set end_time = [end_time, (prices_raw | last).start + timedelta(hours=1)] | min %}
+
+{% set start_hour = date_to_index(start_time) | int %}
+{% set end_hour = 2 + date_to_index(end_time - duration) | int %}
+
+{# All prices within timerange #}
+{% set prices = prices_raw[start_hour:end_hour] %}
+
+
+{# namespace to hold values #}
+{% set ns = namespace(start_times = []) %}
+{% for price in prices %}
+  {% set item = namespace(start = price.start, end = price.start + duration) %}
+  {% if loop.first %}
+    {% set item.start = start_time %}
+    {% set item.end = start_time + duration %}
+  {% elif loop.last %}
+    {% set item.start = end_time - duration %}
+    {% set item.end = end_time %}
+  {% endif %}
+  {% set item.value = 0%}
+  {% for index in range(date_to_index(item.start) | int, date_to_index(item.end) | int + 1) %}
+      {% set hour_duration = ([item.end, index_to_date(index + 1) | as_datetime] | min - [item.start, index_to_date(index) | as_datetime] | max).total_seconds() / 60 / 60 %}
+      {% if hour_duration > 0 %}
+        {% set item.value = item.value + (prices_raw[index].price * hour_duration) %}
+      {% endif %}                    
+  {% endfor %}
+  {% set ns.start_times = ns.start_times + [{'start': item.start | string, 'end': item.end | string, 'value': (item.value * consumption) | round (2)}] %}
+{% endfor -%}               
+{# Sort items by value or start #}
+{{ns.start_times | sort(attribute='start') | tojson}}
