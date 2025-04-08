@@ -1,4 +1,11 @@
 # Energy Price Calculator
+## Installation
+
+1. Setup packages, according to https://www.home-assistant.io/docs/configuration/packages/
+2. Add `calculator.yaml` to the packages/ directory
+3. Remove the first line `energy_calculator:` in calculator.yaml
+4. Reload Home Assistant
+5. Go to Helpers and set the new variables. Hint: Search for `calculator`
 
 ## Configuration 
 
